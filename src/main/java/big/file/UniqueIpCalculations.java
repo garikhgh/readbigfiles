@@ -186,11 +186,6 @@ public class UniqueIpCalculations {
         public int position1;
         public int position2;
 
-        public int dotPosition1;
-        public int dotPosition2;
-        public int dotPosition3;
-        public int dotPosition4;
-
         private static final long BACKSLASH_MASK = 0XA0A0A0A0A0A0A0AL; // backslash in hex
 
 
