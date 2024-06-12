@@ -180,7 +180,6 @@ public class UniqueIpCalculations {
         private long readBuffer1;
         private long readBuffer2;
 
-        private long hash;
         private long entryStart;
 
         public int position1;
@@ -208,7 +207,6 @@ public class UniqueIpCalculations {
         }
 
         private void processStart() {
-            hash = 0;
             entryStart = ptr;
         }
 
@@ -222,12 +220,10 @@ public class UniqueIpCalculations {
             position1 = noContent1 ? 0 : 1 + (Long.numberOfTrailingZeros(highBitMask1) >> 3);
 
             readBuffer1 = lastRead & ~mask1;
-            hash ^= readBuffer1;
 
             int delimiter1 = position1 == 0 ? 0 : position1;
 
             if (delimiter1 != 0) {
-                hash ^= hash >> 32;
                 readBuffer2 = 0;
                 ptr += delimiter1;
                 return false;
@@ -241,13 +237,9 @@ public class UniqueIpCalculations {
             long mask2 = noContent2 ? 0 : -(highBitMask2 >>> 7);
             position2 = noContent2 ? 0 : 1 + (Long.numberOfTrailingZeros(highBitMask2) >> 3);
 
-
             readBuffer2 = lastRead & ~mask2;
-            hash ^= readBuffer2;
 
             int delimiter2 = position2 == 0 ? 0 : position2 + 8;
-
-            hash ^= hash >> 32;
 
             if (delimiter2 != 0) {
                 ptr += delimiter2;
