@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import static java.lang.StringTemplate.STR;
 
 public class TraditionalWay {
 
@@ -24,7 +23,7 @@ public class TraditionalWay {
         }
         long end = System.currentTimeMillis();
 
-        System.out.println(STR."Number of unique lines: \{uniqueLines.size()}  Ms \{end - begin}");
+        System.out.println("Number of unique lines:" + uniqueLines.size()+ " Ms " +(end - begin));
     }
 
 }

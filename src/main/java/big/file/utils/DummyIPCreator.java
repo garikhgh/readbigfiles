@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-public class DummyFileCreator {
+public class DummyIPCreator {
     // create dummy IP's in order to test;
     public static void main(String[] args) {
         dummyIpAddresses();

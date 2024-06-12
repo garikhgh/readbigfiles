@@ -8,12 +8,15 @@ import sun.misc.Unsafe;
 import javax.naming.InsufficientResourcesException;
 import java.io.IOException;
 import java.lang.foreign.Arena;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class UniqueIpCalculations {
@@ -27,11 +30,21 @@ public class UniqueIpCalculations {
     private static final int ENTRY_LENGTH = (Unsafe.ARRAY_BYTE_BASE_OFFSET);
     private static final int ENTRY_NAME = ENTRY_LENGTH;
 
-    private final static long SEGMENT_1 = 858993459L; // 0 -> 858993459L
-    private final static long SEGMENT_2 = 1717986918L; // 858993459L -> 1717986918L
-    private final static long SEGMENT_3 = 2576980377L; //1717986918L -> 2576980377L
-    private final static long SEGMENT_4 = 3435973836L; //3435973836 -> 4294967295L
-    private final static long SEGMENT_5 = 4294967295L;
+    private final static long SEGMENT_1 = 286331153L;
+    private final static long SEGMENT_2 = 572662306L;
+    private final static long SEGMENT_3 = 858993459L;
+    private final static long SEGMENT_4 = 1145324612L;
+    private final static long SEGMENT_5 = 1431655765L;
+    private final static long SEGMENT_6 = 1717986918L;
+    private final static long SEGMENT_7 = 2004318071L;
+    private final static long SEGMENT_8 = 2290649224L;
+    private final static long SEGMENT_9 = 2576980377L;
+    private final static long SEGMENT_10 = 2863311530L;
+    private final static long SEGMENT_11 = 3149642683L;
+    private final static long SEGMENT_12 = 3435973836L;
+    private final static long SEGMENT_13 = 3722304989L;
+    private final static long SEGMENT_14 = 4008636142L;
+    private final static long SEGMENT_15 = 4294967295L;
 
     // Idea of thomaswue, don't wait for slow unmap:
     private static void spawnWorker() throws IOException {
@@ -64,18 +77,21 @@ public class UniqueIpCalculations {
         final long fileSize = fileChannel.size();
         final long segments = (fileSize + PROCESSORS - 1) / PROCESSORS;
         final long mapAddress = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize, Arena.global()).address();
-        final Thread[] parallelThreads = new Thread[PROCESSORS-1];
+        final Thread[] parallelThreads = new Thread[PROCESSORS - 1];
         final SupperArray supperArray = new SupperArray();
         long lastAddress = mapAddress;
         final long endOfFile = mapAddress + fileSize;
-
         long begin = System.currentTimeMillis();
         for (int i = 0; i < PROCESSORS - 1; i++) {
             final long fromAddress = lastAddress;
-            long toAddress  = Math.min(endOfFile, fromAddress + segments);
+            long toAddress = Math.min(endOfFile, fromAddress + segments);
             long finalToAddress = toAddress;
             final Thread thread = new Thread(() -> {
-                processMemory(fromAddress, finalToAddress, fromAddress == mapAddress, supperArray);
+                try {
+                    processMemory(fromAddress, finalToAddress, fromAddress == mapAddress, supperArray);
+                } catch (UnknownHostException e) {
+                    throw new RuntimeException(e);
+                }
             });
 
             thread.start();
@@ -94,19 +110,19 @@ public class UniqueIpCalculations {
     }
 
 
-    public static void processMemory(final long startAddress, final long endAddress, boolean isFileStart, SupperArray supperArray) {
+    public static void processMemory(final long startAddress, final long endAddress, boolean isFileStart, SupperArray supperArray) throws UnknownHostException {
         byte[] entry;
         final Reader reader = new Reader(startAddress, endAddress, isFileStart);
-
         while (reader.hasNext()) {
             reader.processStart();
 
             if (!reader.readNext()) {
                 entry = new byte[16];
                 byte[] ipAddress = combineIpAddress(entry, reader.readBuffer1, reader.readBuffer2);
-                String split = new String(ipAddress, StandardCharsets.UTF_8).trim();
-
-                long ipAsLongAsAddress = ipToLong(split);
+                String ipAddressStr = new String(ipAddress, StandardCharsets.UTF_8).trim();
+                InetAddress inetAddress = InetAddress.getByName(ipAddressStr);
+                byte[] bytesss = inetAddress.getAddress();
+                long ipAsLongAsAddress = ipToLong(bytesss);
                 if (ipAsLongAsAddress <= SEGMENT_1) {
                     supperArray.setUniqueIp1(ipAsLongAsAddress);
                 } else if (ipAsLongAsAddress <= SEGMENT_2) {
@@ -117,17 +133,36 @@ public class UniqueIpCalculations {
                     supperArray.setUniqueIp4(ipAsLongAsAddress);
                 } else if (ipAsLongAsAddress <= SEGMENT_5) {
                     supperArray.setUniqueIp5(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_6) {
+                    supperArray.setUniqueIp6(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_7) {
+                    supperArray.setUniqueIp7(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_8) {
+                    supperArray.setUniqueIp8(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_9) {
+                    supperArray.setUniqueIp9(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_10) {
+                    supperArray.setUniqueIp10(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_11) {
+                    supperArray.setUniqueIp11(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_12) {
+                    supperArray.setUniqueIp12(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_13) {
+                    supperArray.setUniqueIp13(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_14) {
+                    supperArray.setUniqueIp14(ipAsLongAsAddress);
+                } else if (ipAsLongAsAddress <= SEGMENT_15) {
+                    supperArray.setUniqueIp15(ipAsLongAsAddress);
                 }
             }
         }
     }
 
 
-    public static long ipToLong(String ipAddress) {
-        String[] octets = ipAddress.split("\\.");
+    public static long ipToLong(byte[] ipAddress) {
         long result = 0;
-        for (int i = 0; i < 4; i++) {
-            result |= (Long.parseLong(octets[i]) << (24 - (8 * i)));
+        for (byte b : ipAddress) {
+            result = (result << 8) | (b & 0xFF);
         }
         return result;
     }
